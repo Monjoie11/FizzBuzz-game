@@ -6,6 +6,8 @@
     android:id="@+id/play"
     android:title="@string/play"
     android:icon="@drawable/play"
+    android:visible="false"
+    android:enabled="false"
     app:showAsAction="always"/>
 
   <item

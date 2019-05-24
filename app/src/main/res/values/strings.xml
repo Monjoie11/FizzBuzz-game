@@ -13,10 +13,10 @@
 
   <string name="num_digits_key">num_digits</string>
   <string name="num_digits_title">Number of Digits</string>
-  <string name="num_digits_summary"> Seconds each value is displayed (0 = no limit)</string>
+  <string name="num_digits_summary"> Number of digits used in number combinations</string>
 
   <string name="game_time_key">game_time</string>
   <string name="game_time_title">Time of Game</string>
-  <string name="game_time_summary"> Seconds each value is displayed (0 = no limit)</string>
+  <string name="game_time_summary"> Length of game to be played</string>
 
 </resources>
