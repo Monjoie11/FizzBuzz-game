@@ -2,19 +2,28 @@ package edu.cnm.deepdive.fizzbuzz;
 
 import android.content.Intent;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import androidx.core.view.GestureDetectorCompat;
+import androidx.preference.PreferenceManager;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
+  private Random rng = new Random();
   private int value;
   private TextView valueDisplay;
+  private ViewGroup valueContainer;
   private Timer timer;
   private boolean running;
 
@@ -24,6 +33,18 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     valueDisplay = findViewById(R.id.value_display);
+    valueContainer = findViewById(R.id.value_container);
+    GestureDetectorCompat detector = new GestureDetectorCompat(this, new FlingListener());
+    valueContainer.setOnTouchListener(new OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+      if (!detector.onTouchEvent(event) && event.getActionMasked() == MotionEvent.ACTION_UP){
+        valueContainer.setTranslationY(0);
+        valueContainer.setTranslationX(0);
+      }
+        return true;
+      }
+    });
     Log.d("Trace", "Leaving onCreate");
   }
 
@@ -59,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
   protected void onPause() {
     Log.d("Trace", "Entering onPause");
     super.onPause();
-      Log.d("Trace", "Leaving onPause");
+    Log.d("Trace", "Leaving onPause");
   }
 
   @Override
@@ -75,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
     super.onSaveInstanceState(outState);
     Log.d("Trace", "Leaving onSaveInstancedState");
   }
-
 
 
   @Override
@@ -99,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
     boolean handled = true;
     switch (item.getItemId()) {
       case R.id.play:
-       resumeGame();
+        resumeGame();
         break;
       case R.id.pause:
         pauseGame();
@@ -115,8 +135,9 @@ public class MainActivity extends AppCompatActivity {
     Log.d("Trace", "Leaving onOptionsItemSelected");
     return handled;
   }
-  private void pauseGame(){
-    running =false;
+
+  private void pauseGame() {
+    running = false;
     if (timer != null) {
       timer.cancel();
       timer = null;
@@ -127,21 +148,38 @@ public class MainActivity extends AppCompatActivity {
 
   private void resumeGame() {
     running = true;
-    timer = new Timer();
-    timer.schedule(new RandomValueTask(), 0, 3000); //FIXME This should read preferences
+    if (timer != null){
+      timer.cancel();
+    }
+    int timeLimit = PreferenceManager.getDefaultSharedPreferences(this)
+        .getInt(getString(R.string.time_limit_key),
+            getResources().getInteger(R.integer.time_limit_default));
+    updateValue();
+    if (timeLimit != 0) {
+      timer = new Timer();
+      timer.schedule(new RandomValueTask(), timeLimit * 1000); //FIXME This should read preferences
+    }
     //TODO update and necessary fields, timer, & menu
     invalidateOptionsMenu();
   }
 
-  private class RandomValueTask extends TimerTask {
+  private void updateValue() {
+    int numDigits = PreferenceManager.getDefaultSharedPreferences(this)
+        .getInt(getString(R.string.num_digits_key),
+            getResources().getInteger(R.integer.num_digits_default));
+    int limit = (int) Math.pow(10, numDigits) - 1;
+    value = 1 + rng.nextInt(limit);
+    valueContainer.setTranslationX(0);
+    valueContainer.setTranslationY(0);
+    valueDisplay.setText(Integer.toString(value));
+  }
 
-    private Random rng = new Random();
+  private class RandomValueTask extends TimerTask {
 
     @Override
     public void run() {
       Log.d("Trace", "Entering run");
-      value = rng.nextInt(100);
-      runOnUiThread(() -> valueDisplay.setText(Integer.toString(value)));
+      runOnUiThread(() -> resumeGame());
       Log.d("Trace", "Leaving run");
     }
   }
@@ -157,4 +195,31 @@ public class MainActivity extends AppCompatActivity {
     pause.setEnabled(running);
     return true;
   }
+  private class FlingListener extends GestureDetector.SimpleOnGestureListener{
+
+    private float originX;
+    private float originY;
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+      valueContainer.setTranslationX(e2.getX()-originX);
+      valueContainer.setTranslationY(e2.getY()-originY);
+      return true;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+      //TODO update tally; detect if it really is a fling, and in which direction;
+      Log.d("Trace",e2.toString());
+      resumeGame();
+      return true;
+    }
+
+    @Override
+    public boolean onDown(MotionEvent evt) {
+      originX = evt.getX();
+      originY = evt.getY();
+      return true;
+    }
   }
+}

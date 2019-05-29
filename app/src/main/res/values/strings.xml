@@ -19,4 +19,8 @@
   <string name="game_time_title">Time of Game</string>
   <string name="game_time_summary"> Length of game to be played</string>
 
+  <string name="difficulty_title">difficulty</string>
+  <string name="general_title">general</string>
+
+
 </resources>
